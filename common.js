@@ -1,17 +1,14 @@
-'use strict';
+'use strict';  
 
 // Common code shared between index.html, app.html, embed.html etc.
 // This should be loaded after phosphorus.dist.js
-
-/** @type {any} */
-var P;
+/** @type {any} */ 
+var P;  
 
 // @ts-ignore
 var Common = (function() {
   var DEFAULT_OPTIONS = P.player.Player.DEFAULT_OPTIONS;
-  // "truthy" values
   var TRUE = ['true', 'yes', 'on', '1'];
-  // "falsey" values
   var FALSE = ['false', 'no', 'off', '0'];
 
   function parseSearch(handler) {
@@ -27,18 +24,30 @@ var Common = (function() {
   var playerOptions = {};
   var projectId = null;
 
+  // URLパスからプロジェクトIDを取得する関数
+  function parsePathForProjectId() {
+    var pathParts = location.pathname.split('/');
+    if (pathParts.length > 1) {
+      var potentialId = pathParts[pathParts.length - 1];
+      if (/^\d+$/.test(potentialId)) {
+        projectId = potentialId; // 数字のみのID
+      }
+    }
+  }
+
+  // URLパスからプロジェクトIDを解析
+  parsePathForProjectId();
+
+  // 既存のparseSearch関数を呼び出して、クエリパラメータも処理
   parseSearch(function(key, value) {
     function setPlayerOption(name, value) {
-      // Check that this option exists
       if (!DEFAULT_OPTIONS.hasOwnProperty(name)) {
         throw new Error('Unknown option: ' + name);
       }
 
-      // Get the default value and type
       var defaultValue = DEFAULT_OPTIONS[name];
       var expectedType = typeof defaultValue;
 
-      // Convert the input value to the correct type
       if (expectedType === 'number') {
         value = +value;
         if (Number.isNaN(value)) {
@@ -75,7 +84,6 @@ var Common = (function() {
     }
 
     switch (key) {
-      // Player options
       case 'fps':
         setPlayerOption('fps', value);
         break;
@@ -101,7 +109,6 @@ var Common = (function() {
         setPlayerFlag('cloudHost', value);
         break;
       case 'phost':
-        // Legacy mode was removed by Scratch. We will just ignore it.
         if (value !== 'legacy') {
           setPlayerFlag('projectHost', value);
         }
@@ -109,12 +116,7 @@ var Common = (function() {
       case 'chhost':
         setPlayerFlag('cloudHistoryHost', value);
         break;
-      // Project ID
-      case 'id':
-        // projectId is also read from location.hash if not found here.
-        projectId = value;
-        break;
-      // Feature flags
+      // プロジェクトIDはパスから取得済みのため、ここでは処理しない
       case 'webgl':
         P.config.useWebGL = true;
         break;
@@ -132,14 +134,6 @@ var Common = (function() {
         break;
     }
   });
-
-  // Check hash for project ID if not specified in search string
-  if (projectId === null) {
-    var hash = location.hash.substr(1);
-    if (/^\d+$/.test(hash)) {
-      projectId = hash;
-    }
-  }
 
   return {
     parseSearch: parseSearch,
