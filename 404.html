@@ -87,64 +87,62 @@
     <script src="phosphorus.dist.js"></script>
     <script src="common.js"></script>
     <script>
-        (function () {
-            'use strict';
+    (function () {
+        'use strict';
 
-            // 現在のURLからidを取得する関数
-            function getIdFromUrl(url) {
-                const urlParts = url.split('/');
-                // ID部分は通常、URLの最後から2番目にあります
-                return urlParts[urlParts.length - 2] || null;
-            }
+        // 現在のURLからidを取得する関数
+        function getIdFromUrl(url) {
+            const urlParts = url.split('/');
+            return urlParts[urlParts.length - 2] || null;
+        }
 
-            // URLパラメータからidを取得
-            const urlParams = new URLSearchParams(window.location.search);
-            let id = urlParams.get('id');
+        // URLパラメータからidを取得
+        const urlParams = new URLSearchParams(window.location.search);
+        let id = urlParams.get('id');
 
-            // URLから取得したIDで上書き
-            id = getIdFromUrl(window.location.href) || id;
+        // URLから取得したIDで上書き（URLパラメータが無い場合）
+        if (!id) {
+            id = getIdFromUrl(window.location.href);
+        }
 
-            var player = new P.player.Player();
-            var splash = document.querySelector('.splash');
-            var error = document.querySelector('.error');
-            var progressBarFill = document.querySelector('.progress-bar');
+        var player = new P.player.Player();
+        var splash = document.querySelector('.splash');
+        var error = document.querySelector('.error');
+        var progressBarFill = document.querySelector('.progress-bar');
 
-            var errorHandler = new P.player.ErrorHandler(player, {
-                container: document.querySelector('.error-report'),
+        var errorHandler = new P.player.ErrorHandler(player, {
+            container: document.querySelector('.error-report'),
+        });
+
+        player.onprogress.subscribe(function(progress) {
+            progressBarFill.style.width = (10 + progress * 90) + '%';
+        });
+
+        player.onerror.subscribe(function(e) {
+            player.exitFullscreen();
+            error.style.display = 'table';
+            errorHandler.displayErrorMessage(e);
+        });
+
+        document.querySelector('.player').appendChild(player.root);
+
+        player.setOptions(Common.playerOptions);
+        player.setOptions({
+            fullscreenMode: 'window',
+            autoplayPolicy: 'if-audio-playable',
+        });
+
+        player.loadProjectById(id) // ここでIDを使う
+            .then(function() {
+                player.enterFullscreen();
+                splash.style.display = 'none';
+            })
+            .catch(function() {
+                error.style.display = 'table'; 
             });
 
-            player.onprogress.subscribe(function(progress) {
-                progressBarFill.style.width = (10 + progress * 90) + '%';
-            });
-
-            player.onerror.subscribe(function(e) {
-                player.exitFullscreen();
-                error.style.display = 'table';
-                // エラーメッセージの表示
-                errorHandler.displayErrorMessage(e);
-            });
-
-            document.querySelector('.player').appendChild(player.root);
-
-            // プレイヤーのオプション設定
-            player.setOptions(Common.playerOptions);
-            player.setOptions({
-                fullscreenMode: 'window',
-                autoplayPolicy: 'if-audio-playable',
-            });
-
-            player.loadProjectById(Common.projectId)
-                .then(function() {
-                    player.enterFullscreen();
-                    splash.style.display = 'none';
-                })
-                .catch(function() {
-                    error.style.display = 'table'; // ここでエラーが発生したとき
-                });
-
-            // 取得したIDをコンソールに表示
-            console.log("取得したID:", id);
-        }());
-    </script>
+        console.log("取得したID:", id);
+    }());
+</script>
 </body>
 </html>
